@@ -4,20 +4,116 @@ use std::{fs::File, path::PathBuf};
 use struct_patch::traits::Patch as PatchTrait;
 use struct_patch::Patch;
 
-#[derive(Debug, PartialOrd, Clone, Copy, Serialize, Deserialize)]
+#[derive(
+	Debug, PartialOrd, Clone, Copy, Serialize, Deserialize, Eq,
+)]
 pub struct GituiKeyEvent {
 	pub code: KeyCode,
 	pub modifiers: KeyModifiers,
+	pub vim_mod: bool,
 }
 
 impl GituiKeyEvent {
 	pub const fn new(code: KeyCode, modifiers: KeyModifiers) -> Self {
-		Self { code, modifiers }
+		Self {
+			code,
+			modifiers,
+			vim_mod: false,
+		}
+	}
+
+	pub const fn with(
+		code: KeyCode,
+		modifiers: KeyModifiers,
+		vm: bool,
+	) -> Self {
+		Self {
+			code,
+			modifiers,
+			vim_mod: vm,
+		}
 	}
 }
 
 pub fn key_match(ev: &KeyEvent, binding: GituiKeyEvent) -> bool {
-	ev.code == binding.code && ev.modifiers == binding.modifiers
+	return match match_vim_mod(ev, binding) {
+		true => true,
+		_ => {
+			ev.code == binding.code
+				&& ev.modifiers == binding.modifiers
+		}
+	};
+}
+
+fn match_vim_mod(ev: &KeyEvent, binding: GituiKeyEvent) -> bool {
+	match binding {
+		GituiKeyEvent {
+			code: KeyCode::Left,
+			modifiers: KeyModifiers::NONE,
+			vim_mod: true,
+		} => {
+			ev.code == KeyCode::Char('h')
+				&& ev.modifiers == KeyModifiers::NONE
+		}
+		GituiKeyEvent {
+			code: KeyCode::Down,
+			modifiers: KeyModifiers::NONE,
+			vim_mod: true,
+		} => {
+			ev.code == KeyCode::Char('j')
+				&& ev.modifiers == KeyModifiers::NONE
+		}
+		GituiKeyEvent {
+			code: KeyCode::Up,
+			modifiers: KeyModifiers::NONE,
+			vim_mod: true,
+		} => {
+			ev.code == KeyCode::Char('k')
+				&& ev.modifiers == KeyModifiers::NONE
+		}
+		GituiKeyEvent {
+			code: KeyCode::Right,
+			modifiers: KeyModifiers::NONE,
+			vim_mod: true,
+		} => {
+			ev.code == KeyCode::Char('l')
+				&& ev.modifiers == KeyModifiers::NONE
+		}
+		GituiKeyEvent {
+			code: KeyCode::PageUp,
+			modifiers: KeyModifiers::NONE,
+			vim_mod: true,
+		} => {
+			ev.code == KeyCode::Char('b')
+				&& ev.modifiers == KeyModifiers::CONTROL
+		}
+		GituiKeyEvent {
+			code: KeyCode::PageDown,
+			modifiers: KeyModifiers::NONE,
+			vim_mod: true,
+		} => {
+			ev.code == KeyCode::Char('f')
+				&& ev.modifiers == KeyModifiers::CONTROL
+		}
+		GituiKeyEvent {
+			code: KeyCode::Home,
+			modifiers: KeyModifiers::NONE,
+			vim_mod: true,
+		} => {
+			ev.code == KeyCode::Char('g')
+				&& ev.modifiers == KeyModifiers::NONE
+		}
+		GituiKeyEvent {
+			code: KeyCode::End,
+			modifiers: KeyModifiers::NONE,
+			vim_mod: true,
+		} => {
+			ev.code == KeyCode::Char('G')
+				&& ev.modifiers == KeyModifiers::SHIFT
+		}
+
+		_ => false,
+	}
 }
 
 impl PartialEq for GituiKeyEvent {
@@ -114,6 +210,7 @@ pub struct KeysList {
 	pub view_submodule_parent: GituiKeyEvent,
 	pub update_submodule: GituiKeyEvent,
 	pub commit_history_next: GituiKeyEvent,
+	pub vim_mod: bool,
 }
 
 #[rustfmt::skip]
@@ -133,7 +230,7 @@ impl Default for KeysList {
 			exit_popup: GituiKeyEvent::new(KeyCode::Esc,  KeyModifiers::empty()),
 			open_commit: GituiKeyEvent::new(KeyCode::Char('c'),  KeyModifiers::empty()),
 			open_commit_editor: GituiKeyEvent::new(KeyCode::Char('e'), KeyModifiers::CONTROL),
-			open_help: GituiKeyEvent::new(KeyCode::Char('h'),  KeyModifiers::empty()),
+			open_help: GituiKeyEvent::new(KeyCode::Char('?'),  KeyModifiers::empty()),
 			open_options: GituiKeyEvent::new(KeyCode::Char('o'),  KeyModifiers::empty()),
 			move_left: GituiKeyEvent::new(KeyCode::Left,  KeyModifiers::empty()),
 			move_right: GituiKeyEvent::new(KeyCode::Right,  KeyModifiers::empty()),
@@ -167,9 +264,9 @@ impl Default for KeysList {
 			cmd_bar_toggle: GituiKeyEvent::new(KeyCode::Char('.'),  KeyModifiers::empty()),
 			log_tag_commit: GituiKeyEvent::new(KeyCode::Char('t'),  KeyModifiers::empty()),
 			log_mark_commit: GituiKeyEvent::new(KeyCode::Char(' '),  KeyModifiers::empty()),
-			log_checkout_commit: GituiKeyEvent { code: KeyCode::Char('S'), modifiers: KeyModifiers::SHIFT },
-			log_reset_comit: GituiKeyEvent { code: KeyCode::Char('R'), modifiers: KeyModifiers::SHIFT },
-			log_reword_comit: GituiKeyEvent { code: KeyCode::Char('r'), modifiers: KeyModifiers::empty() },
+			log_checkout_commit: GituiKeyEvent::new(KeyCode::Char('S'), KeyModifiers::SHIFT),
+			log_reset_comit: GituiKeyEvent::new(KeyCode::Char('R'), KeyModifiers::SHIFT),
+			log_reword_comit: GituiKeyEvent::new(KeyCode::Char('r'), KeyModifiers::empty()),
 			commit_amend: GituiKeyEvent::new(KeyCode::Char('a'),  KeyModifiers::CONTROL),
 			toggle_verify: GituiKeyEvent::new(KeyCode::Char('f'),  KeyModifiers::CONTROL),
 			copy: GituiKeyEvent::new(KeyCode::Char('y'),  KeyModifiers::empty()),
@@ -197,6 +294,7 @@ impl Default for KeysList {
 			view_submodule_parent: GituiKeyEvent::new(KeyCode::Char('p'),  KeyModifiers::empty()),
 			update_submodule: GituiKeyEvent::new(KeyCode::Char('u'),  KeyModifiers::empty()),
 			commit_history_next: GituiKeyEvent::new(KeyCode::Char('n'),  KeyModifiers::CONTROL),
+            vim_mod: false,
 		}
 	}
 }
@@ -208,6 +306,38 @@ impl KeysList {
 			if let Ok(patch) = ron::de::from_reader(f) {
 				keys_list.apply(patch);
 			}
+		}
+		if keys_list.vim_mod {
+			// left
+			keys_list.move_left.vim_mod = true;
+			keys_list.tree_collapse_recursive.vim_mod = true;
+
+			// down
+			keys_list.move_down.vim_mod = true;
+			keys_list.popup_down.vim_mod = true;
+			keys_list.shift_down.vim_mod = true;
+
+			// up
+			keys_list.move_up.vim_mod = true;
+			keys_list.popup_up.vim_mod = true;
+			keys_list.shift_up.vim_mod = true;
+
+			// right
+			keys_list.move_right.vim_mod = true;
+			keys_list.tree_expand_recursive.vim_mod = true;
+			keys_list.stash_open.vim_mod = true;
+
+			// pageDown
+			keys_list.page_down.vim_mod = true;
+
+			// pageUp
+			keys_list.page_up.vim_mod = true;
+
+			// home
+			keys_list.home.vim_mod = true;
+
+			// end
+			keys_list.end.vim_mod = true;
 		}
 		keys_list
 	}
