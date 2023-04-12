@@ -18,6 +18,13 @@ Create a `key_bindings.ron` file like this:
 )
 ```
 
+enable vim mod
+```
+(
+    vim_mod: Some(true),
+)
+```
+
 The config file format based on the [Ron file format](https://github.com/ron-rs/ron).
 The location of the file depends on your OS:
 * `$HOME/.config/gitui/key_bindings.ron` (mac)
