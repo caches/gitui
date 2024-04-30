@@ -233,7 +233,7 @@ impl Default for KeysList {
 			exit_popup: GituiKeyEvent::new(KeyCode::Esc,  KeyModifiers::empty()),
 			open_commit: GituiKeyEvent::new(KeyCode::Char('c'),  KeyModifiers::empty()),
 			open_commit_editor: GituiKeyEvent::new(KeyCode::Char('e'), KeyModifiers::CONTROL),
-			open_help: GituiKeyEvent::new(KeyCode::Char('?'),  KeyModifiers::empty()),
+			open_help: GituiKeyEvent::new(KeyCode::Char('?'),  KeyModifiers::SHIFT),
 			open_options: GituiKeyEvent::new(KeyCode::Char('o'),  KeyModifiers::empty()),
 			move_left: GituiKeyEvent::new(KeyCode::Left,  KeyModifiers::empty()),
 			move_right: GituiKeyEvent::new(KeyCode::Right,  KeyModifiers::empty()),
