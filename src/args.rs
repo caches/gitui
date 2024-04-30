@@ -71,9 +71,9 @@ fn app() -> ClapApp {
 		.about(crate_description!())
 		.help_template(
 			"\
-{before-help}gitui {version}
-{author}
-{about}
+// {before-help}gitui {version}
+// {author}
+// {about}
 
 {usage-heading} {usage}
 
